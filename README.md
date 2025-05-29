@@ -26,16 +26,6 @@ Một trò chơi Sudoku đơn giản viết bằng **Python 3** và **Pygame**, 
 3. **Chạy project**:
    ```bash
    python main.py
-
-## 📁 Cấu trúc thư mục
-.
-├── Cell.py
-├── Sudoku.py
-├── Table.py
-├── main.py
-├── setting.py
-├── README.md
-└── .gitignore
    
 ## 🎮 Hướng dẫn cách chơi:
 
