@@ -1,6 +1,6 @@
 # 🧩 Sudoku Game – Pygame
 
-Một trò chơi Sudoku đơn giản viết bằng **Python 3** và **Pygame**, với các tính năng chọn độ khó, gợi ý, hiện kết quả và khởi động lại game.
+Một trò chơi Sudoku đơn giản viết bằng **Python 3** và **Pygame**, sử dụng thuật toán **Backtracking** để giải quyết vấn đề, kèm theo đó là các tính năng chọn độ khó, gợi ý, hiện kết quả và tạo game mới.
 
 ---
 
