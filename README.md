@@ -61,16 +61,32 @@ Recommended: **3.12.10**
 ![image](https://github.com/user-attachments/assets/bf00490d-1081-45a6-b429-674c97279961)
 
 ## Level easy
-Ô trống là 27
+**Ô trống là 27**
 
 ![image](https://github.com/user-attachments/assets/5dd1addd-8ab6-4215-a435-f655c7956d7f)
 
 ## Level medium
-Ô trống là 40
+**Ô trống là 40**
 
 ![image](https://github.com/user-attachments/assets/afdbff58-65a1-4095-bde7-764ca39c4f31)
 
+
 ## Level Hard
-Ô trống là 60
+**Ô trống là 60**
 
 ![image](https://github.com/user-attachments/assets/47008c96-49d5-45ad-9f94-fd1bc0b01859)
+
+## Cải tiến
+Sử dụng **Heuristic**:
+Thay vì chọn ô trống 1 cách ngẫu nhiên thì **Heuristic** chọn ô trống có ít khả năng điền hợp lệ nhất
+-> Làm giảm số lần backtracking
+-> Tối ưu hóa lời giải 
+-> Nhanh hơn
+
+--> Thuật toán lựa chọn là Minimum Remaining Values
+
+**Minimum Remaining Values**:
+- Duyệt qua từng ô trống trong bảng.
+- Với mỗi ô, đếm xem có bao nhiêu giá trị hợp lệ (từ 1 đến N) -> options.
+- Nếu options < (min_options_present), thì cập nhật min_options_present và lưu ô đó làm best_cell.
+- Cuối cùng, trả về ô best_cell có ít lựa chọn nhất — tức là khó nhất — để giải quyết trước.
