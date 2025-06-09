@@ -1,0 +1,159 @@
+import pygame
+from Cell import Cell
+from Sudoku import Sudoku
+from setting import WIDTH, HEIGHT, N_CELLS, CELL_SIZE
+import numpy as np
+
+pygame.font.init()
+
+class Table:
+    def __init__(self, screen, difficulty='medium'):
+        self.screen = screen
+        self.difficulty = difficulty
+        self.font = pygame.font.SysFont('Arial', CELL_SIZE[0] // 2)
+        self.font_color = pygame.Color("white")
+        self.dropdown_open = False
+        self.levels = ['hard', 'medium', 'easy']
+        self._start_new_game()
+
+    def _start_new_game(self):
+        self.puzzle = Sudoku(N_CELLS, self._get_clues_from_difficulty())
+        self.answers = self.puzzle.get_solution()
+        self.answerable_table = self.puzzle.get_puzzle()
+        self.SRN = self.puzzle.SRN
+        self.table_cells = []
+        self.clicked_cell = None
+        self.lives = 3
+        self.game_over = False
+        self._generate_game()
+        self._init_buttons()
+
+    def _get_clues_from_difficulty(self):
+        return {
+            'hard': (N_CELLS * N_CELLS) * 3 // 4,
+            'medium': (N_CELLS * N_CELLS) // 2,
+            'easy': (N_CELLS * N_CELLS) // 3
+        }.get(self.difficulty, (N_CELLS * N_CELLS) // 2)
+
+    def _generate_game(self):
+        self.table_cells.clear()
+        for y in range(N_CELLS):
+            for x in range(N_CELLS):
+                value = self.answerable_table[y][x]
+                is_fixed = value != 0
+                self.table_cells.append(Cell(x, y, CELL_SIZE, value, is_fixed))
+
+    def _init_buttons(self):
+        self.buttons = {
+            "hint": pygame.Rect(10, HEIGHT + 10, 100, 40),
+            "result": pygame.Rect(120, HEIGHT + 10, 100, 40),
+            "new_game": pygame.Rect(230, HEIGHT + 10, 120, 40),
+            "level": pygame.Rect(360, HEIGHT + 10, 140, 40),
+        }
+
+    def _draw_grid(self):
+        grid_color = (50, 80, 80)
+        pygame.draw.rect(self.screen, grid_color, (-3, -3, WIDTH + 6, HEIGHT + 6), 6)
+        for i in range(1, N_CELLS):
+            line_width = 2 if i % self.SRN else 4
+            pygame.draw.line(self.screen, grid_color, (i * CELL_SIZE[0], 0), (i * CELL_SIZE[0], HEIGHT), line_width)
+            pygame.draw.line(self.screen, grid_color, (0, i * CELL_SIZE[1]), (WIDTH, i * CELL_SIZE[1]), line_width)
+
+    def _draw_buttons(self):
+        for name, rect in self.buttons.items():
+            pygame.draw.rect(self.screen, pygame.Color("gray"), rect)
+            label = self.font.render(name.replace("_", " ").capitalize(), True, self.font_color)
+            self.screen.blit(label, (rect.x + 10, rect.y + 5))
+
+        # Hiển thị dropdown nếu mở
+        if self.dropdown_open:
+            for i, level in enumerate(self.levels):
+                dropdown_rect = pygame.Rect(360, HEIGHT + 50 + (i * 35), 140, 35)
+                pygame.draw.rect(self.screen, pygame.Color("lightgray"), dropdown_rect)
+                label = self.font.render(level.capitalize(), True, pygame.Color("black"))
+                self.screen.blit(label, (dropdown_rect.x + 10, dropdown_rect.y + 5))
+
+    def _get_cell_at_pos(self, pos):
+        for cell in self.table_cells:
+            if cell.rect.collidepoint(pos):
+                return cell
+        return None
+
+    def _puzzle_solved(self):
+        return all(
+            cell.value == self.answers[cell.row][cell.col]
+            for cell in self.table_cells
+        )
+
+    def handle_mouse_click(self, pos):
+        if pos[1] < HEIGHT:
+            cell = self._get_cell_at_pos(pos)
+            if cell and not cell.is_fixed:
+                self.clicked_cell = cell
+        else:
+            for name, rect in self.buttons.items():
+                if rect.collidepoint(pos):
+                    getattr(self, f"_on_{name}_click")()
+                    return
+
+            # Kiểm tra nếu dropdown mở, người dùng chọn mức
+            if self.dropdown_open:
+                for i, level in enumerate(self.levels):
+                    dropdown_rect = pygame.Rect(360, HEIGHT + 50 + (i * 35), 140, 35)
+                    if dropdown_rect.collidepoint(pos):
+                        self.difficulty = level
+                        self.dropdown_open = False
+                        self._start_new_game()
+                        return
+            else:
+                self.dropdown_open = False
+
+    def handle_key_press(self, key):
+        if self.clicked_cell and not self.clicked_cell.is_fixed and not self.game_over:
+            number = None
+            if pygame.K_1 <= key <= pygame.K_9:
+                number = key - pygame.K_0
+            elif pygame.K_KP1 <= key <= pygame.K_KP9:
+                number = key - pygame.K_KP0
+
+            if number:
+                row = self.clicked_cell.row
+                col = self.clicked_cell.col
+                correct = self.answers[row][col]
+
+                self.clicked_cell.value = number
+                if number == correct:
+                    self.clicked_cell.is_correct_guess = True
+                else:
+                    self.clicked_cell.is_correct_guess = False
+                    self.lives -= 1
+
+    def _on_hint_click(self):
+        empty_cells = [cell for cell in self.table_cells if cell.value == 0]
+        if empty_cells:
+            cell = np.random.choice(empty_cells)
+            row, col = cell.row, cell.col
+            cell.value = self.answers[row][col]
+            cell.is_correct_guess = True
+
+    def _on_result_click(self):
+        for cell in self.table_cells:
+            row, col = cell.row, cell.col
+            cell.value = self.answers[row][col]
+            cell.is_correct_guess = True
+        self.game_over = True
+
+    def _on_new_game_click(self):
+        self._start_new_game()
+
+    def _on_level_click(self):
+        self.dropdown_open = not self.dropdown_open
+
+    def update(self):
+        self.screen.fill((30, 30, 30))
+        for cell in self.table_cells:
+            cell.update(self.screen, self.SRN)
+        self._draw_grid()
+        self._draw_buttons()
+        if self._puzzle_solved() or self.lives <= 0:
+            self.game_over = True
