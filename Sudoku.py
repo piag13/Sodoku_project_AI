@@ -1,17 +1,25 @@
 import numpy as np
 
 class Sudoku:
-    def __init__(self, N, level):
+    def __init__(self, N):
         self.N = N
-        self.level = level
         self.SRN = int(np.sqrt(N))
         self.answer_board = np.zeros((9, 9), dtype=int)
-        self.question_board = None
-        self._generate_board()
+
+        self.fill_diagonal()
+        while not self.fill_remaining(0, 0):
+            self.answer_board = np.zeros((9, 9), dtype=int)
+            self.fill_diagonal()
+        
+        self.solution_board = np.copy(self.answer_board)  # giữ lại lời giải ban đầu
+        self.question_board = np.copy(self.solution_board)
 
     def _generate_board(self):
         self.fill_diagonal()
-        self.fill_remaining(0, self.SRN)
+        while not self.fill_remaining(0, 0):
+            # Nếu không thể điền được, tạo lại từ đầu
+            self.answer_board = np.zeros((9, 9), dtype=int)
+            self.fill_diagonal()
         self.remove_digits()
 
     def fill_diagonal(self):
@@ -54,15 +62,17 @@ class Sudoku:
                 self.answer_board[row][col] = 0
         return False
 
-    def remove_digits(self):
-        self.question_board = self.answer_board.copy()
-        count = self.level
+    def remove_digits(self, level):
+        self.question_board = np.copy(self.solution_board)
+
+        count = level
         while count > 0:
             row = np.random.randint(0, self.N)
             col = np.random.randint(0, self.N)
             if self.question_board[row][col] != 0:
                 self.question_board[row][col] = 0
                 count -= 1
+
 
     def not_in_row(self, row, num):
         return num not in self.answer_board[row, :]
@@ -74,10 +84,14 @@ class Sudoku:
         return self.question_board
 
     def get_solution(self):
-        return self.answer_board
+        return self.solution_board
 
-    # def print(self):
-    #     print("Question:")
-    #     print(self.question_board)
-    #     print("\nSolution:")
-    #     print(self.answer_board)
+    def print(self):
+        print("Question:")
+        print(self.question_board)
+        print("\nSolution:")
+        print(self.solution_board)
+
+if __name__ == "__main__":
+    puzzle = Sudoku(9, 70)
+    puzzle.print()

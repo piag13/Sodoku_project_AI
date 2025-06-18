@@ -9,18 +9,18 @@ class Cell:
         self.row = row
         self.col = col
         self.value = value
-        self.is_fixed = is_fixed  # Added this line
+        self.is_fixed = is_fixed
+        self.is_correct_guess = None
         self.is_correct = None
         self.width, self.height = cell_size
-        self.x = row * self.width
-        self.y = col * self.height
+        self.x = col * self.width
+        self.y = row * self.height
         self.color = pygame.Color("white")
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-
         self.guesses = None if value != 0 else [0] * 9
+        self.font = pygame.font.SysFont('Arial', self.width)
+        self.g_font = pygame.font.SysFont('Arial', self.width // 3)
 
-        self.font = pygame.font.SysFont('monospace', self.width)
-        self.g_font = pygame.font.SysFont('monospace', self.width // 3)
 
     def update(self, screen, SRN=None):
         pygame.draw.rect(screen, self.color, self.rect)
@@ -28,7 +28,10 @@ class Cell:
         if self.value != 0:
             color = pygame.Color("black") if self.is_fixed or self.is_correct else pygame.Color("red")
             text = self.font.render(str(self.value), True, color)
-            screen.blit(text, (self.x, self.y))
+            text_rect = text.get_rect(center=self.rect.center)  # ✅ canh giữa
+            screen.blit(text, text_rect)
+
+
         elif self.guesses is not None:
             guess_grid = convert_list(self.guesses, [SRN] * 3)
             cell_w, cell_h = self.width // SRN, self.height // SRN
