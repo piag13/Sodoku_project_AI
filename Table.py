@@ -17,7 +17,9 @@ class Table:
         self._start_new_game()
 
     def _start_new_game(self):
-        self.puzzle = Sudoku(N_CELLS, self._get_clues_from_difficulty())
+        # chỉ gọi 1 lần
+        self.puzzle = Sudoku(N_CELLS)
+        self.puzzle.remove_digits(self._get_remove_count_from_difficulty())
         self.answers = self.puzzle.get_solution()
         self.answerable_table = self.puzzle.get_puzzle()
         self.SRN = self.puzzle.SRN
@@ -28,20 +30,21 @@ class Table:
         self._generate_game()
         self._init_buttons()
 
-    def _get_clues_from_difficulty(self):
+    def _get_remove_count_from_difficulty(self):
+        total_cells = N_CELLS * N_CELLS
         return {
-            'hard': (N_CELLS * N_CELLS) * 3 // 4,
-            'medium': (N_CELLS * N_CELLS) // 2,
-            'easy': (N_CELLS * N_CELLS) // 3
-        }.get(self.difficulty, (N_CELLS * N_CELLS) // 2)
+            'hard': total_cells * 3 // 4,    # xóa 3/4 số ô (67 ô)
+            'medium': total_cells // 2,      # xóa 1/2 số ô (40 ô)
+            'easy': total_cells // 3         # xóa 1/3 số ô (30 ô)
+        }.get(self.difficulty, total_cells // 2)
 
     def _generate_game(self):
         self.table_cells.clear()
-        for y in range(N_CELLS):
-            for x in range(N_CELLS):
-                value = self.answerable_table[y][x]
+        for row in range(N_CELLS):
+            for col in range(N_CELLS):
+                value = self.answerable_table[row][col]
                 is_fixed = value != 0
-                self.table_cells.append(Cell(x, y, CELL_SIZE, value, is_fixed))
+                self.table_cells.append(Cell(row, col, CELL_SIZE, value, is_fixed))
 
     def _init_buttons(self):
         self.buttons = {
@@ -96,17 +99,25 @@ class Table:
                     getattr(self, f"_on_{name}_click")()
                     return
 
-            # Kiểm tra nếu dropdown mở, người dùng chọn mức
             if self.dropdown_open:
                 for i, level in enumerate(self.levels):
                     dropdown_rect = pygame.Rect(360, HEIGHT + 50 + (i * 35), 140, 35)
                     if dropdown_rect.collidepoint(pos):
                         self.difficulty = level
                         self.dropdown_open = False
-                        self._start_new_game()
+
+                        # ✅ Tạo lại hoàn toàn Sudoku mới khi đổi level
+                        self.puzzle = Sudoku(N_CELLS)
+                        self.puzzle.remove_digits(self._get_remove_count_from_difficulty())
+                        self.answers = self.puzzle.get_solution()
+                        self.answerable_table = self.puzzle.get_puzzle()
+                        self._generate_game()
+                        self.lives = 3
+                        self.game_over = False
                         return
             else:
                 self.dropdown_open = False
+
 
     def handle_key_press(self, key):
         if self.clicked_cell and not self.clicked_cell.is_fixed and not self.game_over:
@@ -144,7 +155,15 @@ class Table:
         self.game_over = True
 
     def _on_new_game_click(self):
-        self._start_new_game()
+        self.puzzle = Sudoku(N_CELLS)  # ✅ Tạo lại lời giải mới
+        self.puzzle.remove_digits(self._get_remove_count_from_difficulty())
+        self.answers = self.puzzle.get_solution()
+        self.answerable_table = self.puzzle.get_puzzle()
+        self._generate_game()
+        self.lives = 3
+        self.game_over = False
+
+
 
     def _on_level_click(self):
         self.dropdown_open = not self.dropdown_open

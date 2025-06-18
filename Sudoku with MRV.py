@@ -68,7 +68,9 @@ class Sudoku:
         return False
 
     def remove_digits(self):
-        self.question_board = self.answer_board.copy()
+        self.solution_board = np.copy(self.answer_board)
+        self.question_board = np.copy(self.answer_board)
+
         count = self.level
         while count > 0:
             row = np.random.randint(0, self.N)
@@ -87,28 +89,14 @@ class Sudoku:
         return self.question_board
 
     def get_solution(self):
-        return self.answer_board
+        return self.solution_board
 
     def print(self):
         print("Question:")
         print(self.question_board)
         print("\nSolution:")
-        print(self.answer_board)
-
-
-import time
+        print(self.solution_board)
 
 if __name__ == "__main__":
     puzzle = Sudoku(9, 70)
     puzzle.print()
-
-    print("\nSolving...")
-    start_time = time.time()
-
-    puzzle.fill_remaining_with_heuristic()
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    puzzle.print()
-    print(f"\n⏱️ Time to solve: {elapsed_time:.15f} seconds")
