@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 class Sudoku:
     def __init__(self, N):
@@ -10,17 +11,9 @@ class Sudoku:
         while not self.fill_remaining(0, 0):
             self.answer_board = np.zeros((9, 9), dtype=int)
             self.fill_diagonal()
-        
-        self.solution_board = np.copy(self.answer_board)  # giữ lại lời giải ban đầu
-        self.question_board = np.copy(self.solution_board)
 
-    def _generate_board(self):
-        self.fill_diagonal()
-        while not self.fill_remaining(0, 0):
-            # Nếu không thể điền được, tạo lại từ đầu
-            self.answer_board = np.zeros((9, 9), dtype=int)
-            self.fill_diagonal()
-        self.remove_digits()
+        self.solution_board = np.copy(self.answer_board)
+        self.question_board = np.copy(self.solution_board)
 
     def fill_diagonal(self):
         for i in range(0, self.N, self.SRN):
@@ -73,7 +66,6 @@ class Sudoku:
                 self.question_board[row][col] = 0
                 count -= 1
 
-
     def not_in_row(self, row, num):
         return num not in self.answer_board[row, :]
 
@@ -92,6 +84,66 @@ class Sudoku:
         print("\nSolution:")
         print(self.solution_board)
 
-if __name__ == "__main__":
-    puzzle = Sudoku(9, 70)
-    puzzle.print()
+    # Backtracking solver
+    def solve_backtracking(self):
+        board = np.copy(self.question_board)
+        self.loop_count = 0
+        start = time.time()
+        self._backtracking(board)
+        end = time.time()
+        return board, end - start, self.loop_count
+
+    def _backtracking(self, board):
+        self.loop_count += 1
+        for i in range(self.N):
+            for j in range(self.N):
+                if board[i][j] == 0:
+                    for num in range(1, self.N + 1):
+                        if self._is_safe(board, i, j, num):
+                            board[i][j] = num
+                            if self._backtracking(board):
+                                return True
+                            board[i][j] = 0
+                    return False
+        return True
+
+    # MRV solver
+    def solve_mrv(self):
+        board = np.copy(self.question_board)
+        self.loop_count = 0
+        start = time.time()
+        self._mrv_solver(board)
+        end = time.time()
+        return board, end - start, self.loop_count
+
+    def _mrv_solver(self, board):
+        self.loop_count += 1
+        empty = self._find_mrv_cell(board)
+        if not empty:
+            return True
+        row, col = empty
+        for num in range(1, self.N + 1):
+            if self._is_safe(board, row, col, num):
+                board[row][col] = num
+                if self._mrv_solver(board):
+                    return True
+                board[row][col] = 0
+        return False
+
+    def _find_mrv_cell(self, board):
+        min_candidates = 10
+        best_cell = None
+        for i in range(self.N):
+            for j in range(self.N):
+                if board[i][j] == 0:
+                    candidates = [n for n in range(1, 10) if self._is_safe(board, i, j, n)]
+                    if len(candidates) < min_candidates:
+                        min_candidates = len(candidates)
+                        best_cell = (i, j)
+        return best_cell
+
+    def _is_safe(self, board, row, col, num):
+        block_row, block_col = row - row % self.SRN, col - col % self.SRN
+        return (num not in board[row] and
+                num not in board[:, col] and
+                num not in board[block_row:block_row + self.SRN, block_col:block_col + self.SRN])

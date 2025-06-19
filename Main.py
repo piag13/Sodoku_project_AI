@@ -6,7 +6,7 @@ from Table import Table
 
 pygame.init()
 
-SCREEN_HEIGHT = HEIGHT + (CELL_SIZE[1] * 3)
+SCREEN_HEIGHT = HEIGHT + (CELL_SIZE[1] * 4.5)
 screen = pygame.display.set_mode((WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sudoku")
 pygame.font.init()

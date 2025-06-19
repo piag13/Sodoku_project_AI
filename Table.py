@@ -3,6 +3,7 @@ from Cell import Cell
 from Sudoku import Sudoku
 from setting import WIDTH, HEIGHT, N_CELLS, CELL_SIZE
 import numpy as np
+from Solve import solve_backtracking, solve_backtracking_mrv
 
 pygame.font.init()
 
@@ -47,11 +48,13 @@ class Table:
                 self.table_cells.append(Cell(row, col, CELL_SIZE, value, is_fixed))
 
     def _init_buttons(self):
+        y_pos = HEIGHT + 10
         self.buttons = {
-            "hint": pygame.Rect(10, HEIGHT + 10, 100, 40),
-            "result": pygame.Rect(120, HEIGHT + 10, 100, 40),
-            "new_game": pygame.Rect(230, HEIGHT + 10, 120, 40),
-            "level": pygame.Rect(360, HEIGHT + 10, 140, 40),
+            "hint": pygame.Rect(10, y_pos, 45, 40),
+            "solve_bt": pygame.Rect(60, y_pos, 100, 40),
+            "solve_mrv": pygame.Rect(165, y_pos, 100, 40),
+            "new_game": pygame.Rect(270, y_pos, 105, 40),
+            "level": pygame.Rect(390, y_pos, 70, 40),
         }
 
     def _draw_grid(self):
@@ -66,7 +69,7 @@ class Table:
         for name, rect in self.buttons.items():
             pygame.draw.rect(self.screen, pygame.Color("gray"), rect)
             label = self.font.render(name.replace("_", " ").capitalize(), True, self.font_color)
-            self.screen.blit(label, (rect.x + 10, rect.y + 5))
+            self.screen.blit(label, (rect.x + 5, rect.y + 5))
 
         # Hiển thị dropdown nếu mở
         if self.dropdown_open:
@@ -147,12 +150,42 @@ class Table:
             cell.value = self.answers[row][col]
             cell.is_correct_guess = True
 
-    def _on_result_click(self):
+    def _on_solve_click(self):
+        puzzle = self.answerable_table
+        stat_bt = solve_backtracking(puzzle)
+        stat_mrv = solve_backtracking_mrv(puzzle)
+
+        print("="*40)
+        print("✅ Evaluation")
+        print(stat_bt.report())
+        print(stat_mrv.report())
+        print("="*40)
+
+        # Hiển thị lời giải MRV lên màn hình
         for cell in self.table_cells:
             row, col = cell.row, cell.col
-            cell.value = self.answers[row][col]
+            cell.value = stat_mrv.solved_board[row][col]
             cell.is_correct_guess = True
+
         self.game_over = True
+
+    def _on_solve_bt_click(self):
+        solved, t, loops = self.puzzle.solve_backtracking()
+        for cell in self.table_cells:
+            cell.value = solved[cell.row][cell.col]
+            cell.is_correct_guess = True
+        print(f"Backtracking: {loops} steps, {t:.4f}s")
+        self.game_over = True
+
+    def _on_solve_mrv_click(self):
+        solved, t, loops = self.puzzle.solve_mrv()
+        for cell in self.table_cells:
+            cell.value = solved[cell.row][cell.col]
+            cell.is_correct_guess = True
+        print(f"MRV: {loops} steps, {t:.4f}s")
+        self.game_over = True
+
+
 
     def _on_new_game_click(self):
         self.puzzle = Sudoku(N_CELLS)  # ✅ Tạo lại lời giải mới
